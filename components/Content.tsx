@@ -10,6 +10,15 @@ interface Interviewee {
 }
 
 export default function Content() {
+  const { GoogleGenerativeAI } = require("@google/generative-ai");
+  const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
+
+  async function run() {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
+    const result = await model.generateContent(["Genera un resumén sobre la siguientes respuestas de los entrevistados de un párrafo en español: ", intervieweesText]);
+    alert(result.response.text());
+  }
+
   const [isRecording, setIsRecording] = useState(false)
   const [activeButton, setActiveButton] = useState<'question' | 'answer'>('question')
   const [interviewees] = useState<Interviewee[]>([
@@ -18,6 +27,10 @@ export default function Content() {
     { id: 3, name: 'Interviewee 3', response: "I'm a full-stack developer with two years of experience. I've worked with Java and Angular, and I'm interested in learning more about cloud computing and microservices architecture." },
     { id: 4, name: 'Interviewee 4', response: "I'm a front-end engineer with four years of experience. I specialize in responsive design and performance optimization, and I enjoy experimenting with new CSS features and animations." },
   ])
+
+  const intervieweesText = interviewees.map(interviewee => 
+    `Interview ${interviewee.id}\n${interviewee.response}\n`
+  ).join('\n');
 
   const toggleRecording = () => {
     setIsRecording(!isRecording)
@@ -72,7 +85,7 @@ export default function Content() {
           ))}
         </div>
         <div className="flex flex-wrap gap-2 mt-8">
-          <button className="bg-red-600 text-white px-4 py-2 rounded-full">
+          <button className="bg-red-600 text-white px-4 py-2 rounded-full" onClick={run}>
             Generar un resumen
           </button>
           <button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full">
