@@ -13,7 +13,7 @@ export default function SignUp() {
     <div className="flex flex-col items-center justify-between min-h-screen bg-white p-6">
       <div className="w-full max-w-md">
         <h1 className="text-3xl font-bold text-center mb-8">
-          Sign up to AI Interview Pro
+          Inicia sesión a AI Quest
         </h1>
         
         {/* Placeholder for logo or illustration */}
@@ -23,11 +23,11 @@ export default function SignUp() {
           className="w-full bg-red-600 hover:bg-red-700 text-white py-6 rounded-full text-lg font-semibold"
           onClick={handleSignUp}
         >
-          Sign Up with Google
+          Inicia sesión con Google
         </button>
         
         <p className="text-center text-sm text-gray-600 mt-4">
-          By signing up you agree to our terms of service and privacy policy
+          Al iniciar sesión, aceptas nuestros terminos de servicio y politica de privacidad
         </p>
       </div>
     </div>
