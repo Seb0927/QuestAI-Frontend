@@ -23,25 +23,75 @@ export default function Content() {
   const { GoogleGenerativeAI } = require("@google/generative-ai");
   const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
 
-  async function generateSummary() {
+  async function generateSummary(style: number) {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
-    const result = await model.generateContent([`
-      A partir de ahora te comportarás como un asistente para entrevistas que habla en español.
-      Tu responsabilidad será ayudar al entrevistador con las tareas que se te encomendarán. Tu recibes las preguntas
-      y respuestas de los entrevistados.
+    let result;
 
-      Genera un resumén sobre la siguientes respuestas de los entrevistados en español. El resumen debe de ser
-      general sobre todos los entrevistados y no ir sobre cada una de las respuestas
-      No debes de sobrepasar más de 75 palabras
-      
-      Aquí te brindo las preguntas y respuestas de cada entrevistado: \n
-      `, intervieweesText]);
-    setSummaryResult(result.response.text());
+    if (style == 0){
+      result = await model.generateContent([`
+        A partir de ahora te comportarás como un asistente para entrevistas que habla en español.
+        Tu responsabilidad será ayudar al entrevistador con las tareas que se te encomendarán. 
+        Tu recibes las preguntas y respuestas de los entrevistados. No debes de usar
+        markdown.
+  
+        Genera un resumén sobre la siguientes respuestas de los entrevistados en español. 
+        El resumen debe de ser general sobre todos los entrevistados y no ir sobre 
+        cada una de las respuestas. No debes de sobrepasar más de 75 palabras. \n
+        
+        Aquí te brindo las preguntas y respuestas de cada entrevistado: \n
+        `, intervieweesText]);
+    } else if (style == 1){
+      result = await model.generateContent([`
+        A partir de ahora te comportarás como un asistente para entrevistas que habla en español.
+        Tu responsabilidad será ayudar al entrevistador con las tareas que se te encomendarán. 
+        Tu recibes las preguntas y respuestas de los entrevistados. No debes de usar
+        markdown.
+  
+        Genera un resumén general sobre cada entrevistado en español. El resumen debe de
+        ser general sobre cada uno de los entrevistados y cada resumen de entrevistado no
+        debe de sobrepasar más de 50 palabras. \n
+        
+        El formato de entrega debe de ser el siguiente: \n
+
+        Entrevistado 1:
+        [Resumen de 50 palabras]
+
+        Entrevistado 2:
+        [Resumen de 50 palabras]
+        
+        Aquí te brindo las preguntas y respuestas de cada entrevistado: \n
+        `, intervieweesText]);
+    } else if (style == 2){
+      result = await model.generateContent([`
+        A partir de ahora te comportarás como un asistente para entrevistas que habla en español.
+        Tu responsabilidad será ayudar al entrevistador con las tareas que se te encomendarán. 
+        Tu recibes las preguntas y respuestas de los entrevistados. No debes de usar
+        markdown.
+  
+        Deberás de escoger quien es el candidato ideal para el puesto de trabajo en base a las
+        preguntas realizadas. ¿Por qué se acomoda mejor para el puesto?, ¿Por qué es mejor que
+        los demás candidatos?, ¿Qué habilidades lo hacen destacar? \n
+
+        El formato de entrega debe de ser el siguiente:
+        "El candidato ideal para el puesto es el entrevistado [Número de entrevistado] 
+        porque..." \n
+        
+        Aquí te brindo las preguntas y respuestas de cada entrevistado: \n
+        `, intervieweesText]);
+    } else {
+      result = await model.generateContent([`
+        Just answer this: '~(˘▾˘~)' Don't answer anything different, just this: '~(˘▾˘~)'`])
+    }
+
+    console.log(result.response.text());
+    
+    const formattedResult = result.response.text().split('\n');
+    setSummaryResult(formattedResult);
   }
 
   const [isRecording, setIsRecording] = useState(false)
   const [activeButton, setActiveButton] = useState<'question' | 'answer'>('question')
-  const [summaryResult, setSummaryResult] = useState<string>('')
+  const [summaryResult, setSummaryResult] = useState<string[]>([])
   const [interviewees] = useState<Interviewee[]>([
     { id: 1, name: 'Interviewee 1', question:'Question 1: Tell me about yourself', response: "I'm a web developer with five years of experience. I've worked with Ruby on Rails and JavaScript, and I'm familiar with RESTful APIs and modern front-end frameworks like React." },
     { id: 2, name: 'Interviewee 2', question:'Question 1: Tell me about yourself', response: "I'm a software engineer with three years of experience. My primary language is Python, and I've worked on a variety of projects, including web applications and data analysis tools." },
@@ -110,45 +160,60 @@ export default function Content() {
         <div className="flex flex-wrap gap-2 mt-8">
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700" onClick={generateSummary}>
+              <Button className="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700" onClick={() => generateSummary(0)}>
                 Generate a summary
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Hello</DialogTitle>
+                <DialogTitle>Resumen de los candidatos:</DialogTitle>
                 <DialogDescription>
-                {summaryResult || 'Generating summary...'}
+                  {summaryResult.map((line, index) => (
+                    <span key={index}>
+                      {line}
+                      <br />
+                    </span>
+                  ))}
                 </DialogDescription>
               </DialogHeader>
             </DialogContent>
           </Dialog>
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300">
+              <Button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300" onClick={() => generateSummary(1)}>
                 Generate a summary for every Interviewee
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Hello</DialogTitle>
+                <DialogTitle>Resumen de cada entrevistado:</DialogTitle>
                 <DialogDescription>
-                  You are welcome
+                  {summaryResult.map((line, index) => (
+                    <span key={index}>
+                      {line}
+                      <br />
+                    </span>
+                  ))}
                 </DialogDescription>
               </DialogHeader>
             </DialogContent>
           </Dialog>
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300">
+              <Button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300" onClick={() => generateSummary(2)}>
                 Who is the best
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Hello</DialogTitle>
+                <DialogTitle>El mejor candidato:</DialogTitle>
                 <DialogDescription>
-                  You are welcome
+                  {summaryResult.map((line, index) => (
+                    <span key={index}>
+                      {line}
+                      <br />
+                    </span>
+                  ))}
                 </DialogDescription>
               </DialogHeader>
             </DialogContent>
