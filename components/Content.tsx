@@ -1,11 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronRight, Mic, Circle, User } from 'lucide-react'
+import { ChevronRight, Mic, Circle} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog'
 
 interface Interviewee {
   id: number
   name: string
+  question: string
   response: string
 }
 
@@ -13,23 +23,36 @@ export default function Content() {
   const { GoogleGenerativeAI } = require("@google/generative-ai");
   const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
 
-  async function run() {
+  async function generateSummary() {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
-    const result = await model.generateContent(["Genera un resumén sobre la siguientes respuestas de los entrevistados de un párrafo en español: ", intervieweesText]);
-    alert(result.response.text());
+    const result = await model.generateContent([`
+      A partir de ahora te comportarás como un asistente para entrevistas que habla en español.
+      Tu responsabilidad será ayudar al entrevistador con las tareas que se te encomendarán. Tu recibes las preguntas
+      y respuestas de los entrevistados.
+
+      Genera un resumén sobre la siguientes respuestas de los entrevistados en español. El resumen debe de ser
+      general sobre todos los entrevistados y no ir sobre cada una de las respuestas
+      No debes de sobrepasar más de 75 palabras
+      
+      Aquí te brindo las preguntas y respuestas de cada entrevistado: \n
+      `, intervieweesText]);
+    setSummaryResult(result.response.text());
   }
 
   const [isRecording, setIsRecording] = useState(false)
   const [activeButton, setActiveButton] = useState<'question' | 'answer'>('question')
+  const [summaryResult, setSummaryResult] = useState<string>('')
   const [interviewees] = useState<Interviewee[]>([
-    { id: 1, name: 'Interviewee 1', response: "I'm a web developer with five years of experience. I've worked with Ruby on Rails and JavaScript, and I'm familiar with RESTful APIs and modern front-end frameworks like React." },
-    { id: 2, name: 'Interviewee 2', response: "I'm a software engineer with three years of experience. My primary language is Python, and I've worked on a variety of projects, including web applications and data analysis tools." },
-    { id: 3, name: 'Interviewee 3', response: "I'm a full-stack developer with two years of experience. I've worked with Java and Angular, and I'm interested in learning more about cloud computing and microservices architecture." },
-    { id: 4, name: 'Interviewee 4', response: "I'm a front-end engineer with four years of experience. I specialize in responsive design and performance optimization, and I enjoy experimenting with new CSS features and animations." },
+    { id: 1, name: 'Interviewee 1', question:'Question 1: Tell me about yourself', response: "I'm a web developer with five years of experience. I've worked with Ruby on Rails and JavaScript, and I'm familiar with RESTful APIs and modern front-end frameworks like React." },
+    { id: 2, name: 'Interviewee 2', question:'Question 1: Tell me about yourself', response: "I'm a software engineer with three years of experience. My primary language is Python, and I've worked on a variety of projects, including web applications and data analysis tools." },
+    { id: 3, name: 'Interviewee 3', question:'Question 1: Tell me about yourself', response: "I'm a full-stack developer with two years of experience. I've worked with Java and Angular, and I'm interested in learning more about cloud computing and microservices architecture." },
+    { id: 4, name: 'Interviewee 4', question:'Question 1: Tell me about yourself', response: "I'm a front-end engineer with four years of experience. I specialize in responsive design and performance optimization, and I enjoy experimenting with new CSS features and animations." },
   ])
 
   const intervieweesText = interviewees.map(interviewee => 
-    `Interview ${interviewee.id}\n${interviewee.response}\n`
+    `Interview ${interviewee.id}\n
+    Question: ${interviewee.question}\n
+    ${interviewee.response}\n`
   ).join('\n');
 
   const toggleRecording = () => {
@@ -75,7 +98,7 @@ export default function Content() {
             <div key={interviewee.id} className="bg-gray-100 p-4 rounded-lg">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">
-                  Question 1: Tell me about yourself
+                  {interviewee.question}
                 </h3>
                 <ChevronRight className="text-gray-400" />
               </div>
@@ -85,21 +108,81 @@ export default function Content() {
           ))}
         </div>
         <div className="flex flex-wrap gap-2 mt-8">
-          <button className="bg-red-600 text-white px-4 py-2 rounded-full" onClick={run}>
-            Generar un resumen
-          </button>
-          <button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full">
-            Generar un resumen por cada entrevistado
-          </button>
-          <button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full">
-            ¿Quien es el mejor?
-          </button>
-          <button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full">
-            Traducir
-          </button>
-          <button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full">
-            Borrar todo
-          </button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700" onClick={generateSummary}>
+                Generate a summary
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Hello</DialogTitle>
+                <DialogDescription>
+                {summaryResult || 'Generating summary...'}
+                </DialogDescription>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300">
+                Generate a summary for every Interviewee
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Hello</DialogTitle>
+                <DialogDescription>
+                  You are welcome
+                </DialogDescription>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300">
+                Who is the best
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Hello</DialogTitle>
+                <DialogDescription>
+                  You are welcome
+                </DialogDescription>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300">
+                Translate
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Hello</DialogTitle>
+                <DialogDescription>
+                  You are welcome
+                </DialogDescription>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300">
+                Delete all
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Hello</DialogTitle>
+                <DialogDescription>
+                  You are welcome
+                </DialogDescription>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>
