@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect} from 'react'
 import { ChevronRight, Mic, Circle} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,6 +12,8 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog'
 import { GoogleGenerativeAI } from "@google/generative-ai"
+import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
+
 
 interface Interviewee {
   id: number
@@ -34,27 +36,27 @@ export default function Content() {
     if (style == 0){
       result = await model.generateContent([`
         A partir de ahora te comportarás como un asistente para entrevistas que habla en español.
-        Tu responsabilidad será ayudar al entrevistador con las tareas que se te encomendarán. 
+        Tu responsabilidad será ayudar al entrevistador con las tareas que se te encomendarán.
         Tu recibes las preguntas y respuestas de los entrevistados. No debes de usar
         markdown.
-  
-        Genera un resumén sobre la siguientes respuestas de los entrevistados en español. 
-        El resumen debe de ser general sobre todos los entrevistados y no ir sobre 
+
+        Genera un resumén sobre la siguientes respuestas de los entrevistados en español.
+        El resumen debe de ser general sobre todos los entrevistados y no ir sobre
         cada una de las respuestas. No debes de sobrepasar más de 75 palabras. \n
-        
+
         Aquí te brindo las preguntas y respuestas de cada entrevistado: \n
         `, intervieweesText]);
     } else if (style == 1){
       result = await model.generateContent([`
         A partir de ahora te comportarás como un asistente para entrevistas que habla en español.
-        Tu responsabilidad será ayudar al entrevistador con las tareas que se te encomendarán. 
+        Tu responsabilidad será ayudar al entrevistador con las tareas que se te encomendarán.
         Tu recibes las preguntas y respuestas de los entrevistados. No debes de usar
         markdown.
-  
+
         Genera un resumén general sobre cada entrevistado en español. El resumen debe de
         ser general sobre cada uno de los entrevistados y cada resumen de entrevistado no
         debe de sobrepasar más de 50 palabras. \n
-        
+
         El formato de entrega debe de ser el siguiente: \n
 
         Entrevistado 1:
@@ -62,24 +64,24 @@ export default function Content() {
 
         Entrevistado 2:
         [Resumen de 50 palabras]
-        
+
         Aquí te brindo las preguntas y respuestas de cada entrevistado: \n
         `, intervieweesText]);
     } else if (style == 2){
       result = await model.generateContent([`
         A partir de ahora te comportarás como un asistente para entrevistas que habla en español.
-        Tu responsabilidad será ayudar al entrevistador con las tareas que se te encomendarán. 
+        Tu responsabilidad será ayudar al entrevistador con las tareas que se te encomendarán.
         Tu recibes las preguntas y respuestas de los entrevistados. No debes de usar
         markdown.
-  
+
         Deberás de escoger quien es el candidato ideal para el puesto de trabajo en base a las
         preguntas realizadas. ¿Por qué se acomoda mejor para el puesto?, ¿Por qué es mejor que
         los demás candidatos?, ¿Qué habilidades lo hacen destacar? \n
 
         El formato de entrega debe de ser el siguiente:
-        "El candidato ideal para el puesto es el entrevistado [Número de entrevistado] 
+        "El candidato ideal para el puesto es el entrevistado [Número de entrevistado]
         porque..." \n
-        
+
         Aquí te brindo las preguntas y respuestas de cada entrevistado: \n
         `, intervieweesText]);
     } else {
@@ -88,7 +90,7 @@ export default function Content() {
     }
 
     console.log(result.response.text());
-    
+
     const formattedResult = result.response.text().split('\n');
     setSummaryResult(formattedResult);
   }
@@ -102,16 +104,67 @@ export default function Content() {
     { id: 3, name: 'Interviewee 3', question:'Question 1: Tell me about yourself', response: "I'm a full-stack developer with two years of experience. I've worked with Java and Angular, and I'm interested in learning more about cloud computing and microservices architecture." },
     { id: 4, name: 'Interviewee 4', question:'Question 1: Tell me about yourself', response: "I'm a front-end engineer with four years of experience. I specialize in responsive design and performance optimization, and I enjoy experimenting with new CSS features and animations." },
   ])
+  const [text, setText] = useState("");
+  const [recognizer, setRecognizer] = useState<SpeechSDK.SpeechRecognizer | null>(null);
 
-  const intervieweesText = interviewees.map(interviewee => 
+  useEffect(() => {
+    const subscriptionKey = process.env.NEXT_PUBLIC_AZURE_SPEECH_KEY;
+    const region = process.env.NEXT_PUBLIC_AZURE_REGION;
+
+    if (!subscriptionKey || !region) {
+      console.error("Azure Speech Service key or region is not defined");
+      return;
+    }
+
+    const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(subscriptionKey, region);
+    speechConfig.speechRecognitionLanguage = "en-US";
+    const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+    const newRecognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+
+    setRecognizer(newRecognizer);
+
+    return () => {
+      newRecognizer.close();
+    };
+  }, []);
+
+  const startRecognition = () => {
+    if (!recognizer) {
+      console.error("Speech recognizer is not initialized");
+      return;
+    }
+
+    setIsRecording(true);
+    setText("");
+
+    recognizer.recognizeOnceAsync(
+      result => {
+        if (result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+          setText(result.text);
+        } else {
+          console.error("Speech recognition error:", result.errorDetails);
+        }
+        setIsRecording(false);
+      },
+      error => {
+        console.error("Speech recognition error:", error);
+        setIsRecording(false);
+      }
+    );
+  };
+
+  const stopRecognition = () => {
+    if (recognizer) {
+      recognizer.stopContinuousRecognitionAsync();
+      setIsRecording(false);
+    }
+  };
+  const intervieweesText = interviewees.map(interviewee =>
     `Interview ${interviewee.id}\n
     Question: ${interviewee.question}\n
     ${interviewee.response}\n`
   ).join('\n');
 
-  const toggleRecording = () => {
-    setIsRecording(!isRecording)
-  }
 
   const toggleActiveButton = (button: 'question' | 'answer') => {
     setActiveButton(button)
@@ -124,10 +177,11 @@ export default function Content() {
         <div className="flex items-center space-x-2 mb-4">
           <button
             className="bg-red-600 text-white p-3 rounded-full flex-shrink-0 transition-all duration-300 ease-in-out"
-            onClick={toggleRecording}
+            onClick={isRecording ? stopRecognition : startRecognition}
           >
             {isRecording ? <Circle size={24} /> : <Mic size={24} />}
           </button>
+
           <div className="flex-grow flex space-x-2">
             <button
               className={`px-6 py-3 rounded-full flex-grow text-center transition-colors duration-300 ease-in-out ${
@@ -148,6 +202,8 @@ export default function Content() {
           </div>
         </div>
         <div className="space-y-4">
+          Speech
+          {text}
           {interviewees.map((interviewee) => (
             <div key={interviewee.id} className="bg-gray-100 p-4 rounded-lg">
               <div className="flex justify-between items-center">
