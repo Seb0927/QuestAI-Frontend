@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog'
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
 interface Interviewee {
   id: number
@@ -20,8 +21,11 @@ interface Interviewee {
 }
 
 export default function Content() {
-  const { GoogleGenerativeAI } = require("@google/generative-ai");
-  const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
+  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("NEXT_PUBLIC_GEMINI_API_KEY is not defined");
+  }
+  const genAI = new GoogleGenerativeAI(apiKey);
 
   async function generateSummary(style: number) {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
