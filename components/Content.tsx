@@ -129,6 +129,13 @@ export default function Content() {
     };
   }, []);
 
+  const deleteAll = () => {
+    interviewees.splice(0, interviewees.length)
+    setQuestionID(0)
+    setIntervieweeID(1)
+    setQuestionRecorded(false)
+  }
+
   const startRecognition = () => {
     if (!recognizer) {
       console.error("Speech recognizer is not initialized");
@@ -136,7 +143,6 @@ export default function Content() {
     }
 
     setIsRecording(true);
-
 
     recognizer.recognizeOnceAsync(
       result => {
@@ -312,21 +318,9 @@ export default function Content() {
               </DialogHeader>
             </DialogContent>
           </Dialog>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300">
-                Delete all
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Hello</DialogTitle>
-                <DialogDescription>
-                  You are welcome
-                </DialogDescription>
-              </DialogHeader>
-            </DialogContent>
-          </Dialog>
+          <Button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300" onClick={deleteAll}>
+            Delete all
+          </Button>
         </div>
       </div>
     </div>
