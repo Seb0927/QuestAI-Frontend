@@ -96,15 +96,12 @@ export default function Content() {
   }
 
   const [isRecording, setIsRecording] = useState(false)
+  const [questionRecorded, setQuestionRecorded] = useState<boolean>(false)
   const [activeButton, setActiveButton] = useState<'question' | 'answer'>('question')
   const [summaryResult, setSummaryResult] = useState<string[]>([])
-  const [interviewees] = useState<Interviewee[]>([
-    { id: 1, name: 'Interviewee 1', question:'Question 1: Tell me about yourself', response: "I'm a web developer with five years of experience. I've worked with Ruby on Rails and JavaScript, and I'm familiar with RESTful APIs and modern front-end frameworks like React." },
-    { id: 2, name: 'Interviewee 2', question:'Question 1: Tell me about yourself', response: "I'm a software engineer with three years of experience. My primary language is Python, and I've worked on a variety of projects, including web applications and data analysis tools." },
-    { id: 3, name: 'Interviewee 3', question:'Question 1: Tell me about yourself', response: "I'm a full-stack developer with two years of experience. I've worked with Java and Angular, and I'm interested in learning more about cloud computing and microservices architecture." },
-    { id: 4, name: 'Interviewee 4', question:'Question 1: Tell me about yourself', response: "I'm a front-end engineer with four years of experience. I specialize in responsive design and performance optimization, and I enjoy experimenting with new CSS features and animations." },
-  ])
-  const [text, setText] = useState("");
+  const [questionID, setQuestionID] = useState<number>(0)
+  const [interviewees] = useState<Interviewee[]>([])
+
   const [recognizer, setRecognizer] = useState<SpeechSDK.SpeechRecognizer | null>(null);
 
   useEffect(() => {
@@ -135,12 +132,20 @@ export default function Content() {
     }
 
     setIsRecording(true);
-    setText("");
+
 
     recognizer.recognizeOnceAsync(
       result => {
         if (result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
-          setText(result.text);
+          if (activeButton === 'question') {
+            interviewees.push({ id: questionID, name: `interviewee ${questionID + 1}`, question: `${result.text}`, response: ""})
+            setQuestionRecorded(true)
+          }
+        if (activeButton === 'answer') {
+          interviewees[questionID].response = result.text
+          setQuestionID(questionID + 1)
+          setQuestionRecorded(false)
+        }
         } else {
           console.error("Speech recognition error:", result.errorDetails);
         }
@@ -176,25 +181,28 @@ export default function Content() {
         <h2 className="text-3xl font-bold text-center my-8">¡Tu asistente de IA para entrevistas!</h2>
         <div className="flex items-center space-x-2 mb-4">
           <button
-            className="bg-red-600 text-white p-3 rounded-full flex-shrink-0 transition-all duration-300 ease-in-out"
+            className={`bg-red-600 text-white p-3 rounded-full flex-shrink-0 transition-all duration-300 ease-in-out ${questionRecorded && activeButton === 'question' || !questionRecorded && activeButton === 'answer' ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={isRecording ? stopRecognition : startRecognition}
+            disabled={questionRecorded && activeButton === 'question' || !questionRecorded && activeButton === 'answer'}
           >
             {isRecording ? <Circle size={24} /> : <Mic size={24} />}
           </button>
 
           <div className="flex-grow flex space-x-2">
             <button
+              disabled={questionRecorded}
               className={`px-6 py-3 rounded-full flex-grow text-center transition-colors duration-300 ease-in-out ${
-                activeButton === 'question' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-800'
-              }`}
+              activeButton === 'question' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-800'
+              } ${questionRecorded ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => toggleActiveButton('question')}
             >
               Pregunta
             </button>
             <button
+              disabled={!questionRecorded}
               className={`px-6 py-3 rounded-full flex-grow text-center transition-colors duration-300 ease-in-out ${
-                activeButton === 'answer' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-800'
-              }`}
+              activeButton === 'answer' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-800'
+              } ${!questionRecorded ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => toggleActiveButton('answer')}
             >
               Respuesta
@@ -202,8 +210,6 @@ export default function Content() {
           </div>
         </div>
         <div className="space-y-4">
-          Speech
-          {text}
           {interviewees.map((interviewee) => (
             <div key={interviewee.id} className="bg-gray-100 p-4 rounded-lg">
               <div className="flex justify-between items-center">
