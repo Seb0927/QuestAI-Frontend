@@ -78,6 +78,8 @@ export default function Content() {
         preguntas realizadas. ¿Por qué se acomoda mejor para el puesto?, ¿Por qué es mejor que
         los demás candidatos?, ¿Qué habilidades lo hacen destacar? \n
 
+        Ten en cuenta que el formato en que se te en
+
         El formato de entrega debe de ser el siguiente:
         "El candidato ideal para el puesto es el entrevistado [Número de entrevistado]
         porque..." \n
@@ -100,6 +102,8 @@ export default function Content() {
   const [activeButton, setActiveButton] = useState<'question' | 'answer'>('question')
   const [summaryResult, setSummaryResult] = useState<string[]>([])
   const [questionID, setQuestionID] = useState<number>(0)
+  const [intervieweeID, setIntervieweeID] = useState<number>(1)
+  const [question, setQuestion] = useState<string>('')
   const [interviewees] = useState<Interviewee[]>([])
 
   const [recognizer, setRecognizer] = useState<SpeechSDK.SpeechRecognizer | null>(null);
@@ -114,7 +118,7 @@ export default function Content() {
     }
 
     const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(subscriptionKey, region);
-    speechConfig.speechRecognitionLanguage = "en-US";
+    speechConfig.speechRecognitionLanguage = "es-ES";
     const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
     const newRecognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
 
@@ -138,12 +142,21 @@ export default function Content() {
       result => {
         if (result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
           if (activeButton === 'question') {
-            interviewees.push({ id: questionID, name: `interviewee ${questionID + 1}`, question: `${result.text}`, response: ""})
+            console.log("Entre a pregunta")
+            setIntervieweeID(1)
+            setQuestion(result.text)
+            interviewees.push({ id: questionID, name: `interviewee ${1}`, question: `${result.text}`, response: ""})
             setQuestionRecorded(true)
           }
         if (activeButton === 'answer') {
+          console.log(interviewees)
+          if (!questionRecorded){
+            console.log("Entre a falso respuesta")
+            interviewees.push({ id: questionID, name: `interviewee ${intervieweeID}`, question: `${question}`, response: ""})
+          }
           interviewees[questionID].response = result.text
           setQuestionID(questionID + 1)
+          setIntervieweeID(intervieweeID + 1)
           setQuestionRecorded(false)
         }
         } else {
@@ -165,7 +178,7 @@ export default function Content() {
     }
   };
   const intervieweesText = interviewees.map(interviewee =>
-    `Interview ${interviewee.id}\n
+    `Interview ${interviewee.name}\n
     Question: ${interviewee.question}\n
     ${interviewee.response}\n`
   ).join('\n');
@@ -181,9 +194,9 @@ export default function Content() {
         <h2 className="text-3xl font-bold text-center my-8">¡Tu asistente de IA para entrevistas!</h2>
         <div className="flex items-center space-x-2 mb-4">
           <button
-            className={`bg-red-600 text-white p-3 rounded-full flex-shrink-0 transition-all duration-300 ease-in-out ${questionRecorded && activeButton === 'question' || !questionRecorded && activeButton === 'answer' ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`bg-red-600 text-white p-3 rounded-full flex-shrink-0 transition-all duration-300 ease-in-out ${questionRecorded && activeButton === 'question' ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={isRecording ? stopRecognition : startRecognition}
-            disabled={questionRecorded && activeButton === 'question' || !questionRecorded && activeButton === 'answer'}
+            disabled={questionRecorded && activeButton === 'question' }
           >
             {isRecording ? <Circle size={24} /> : <Mic size={24} />}
           </button>
