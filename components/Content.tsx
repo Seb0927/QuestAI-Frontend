@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
+import { useUser } from '@/context/UserContext'
 
 
 interface Interviewee {
@@ -23,6 +24,10 @@ interface Interviewee {
 }
 
 export default function Content() {
+  const { user } = useUser();
+
+  console.log(user)
+
   const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("NEXT_PUBLIC_GEMINI_API_KEY is not defined");

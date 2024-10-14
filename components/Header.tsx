@@ -2,13 +2,16 @@
 
 import { User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useUser } from '@/context/UserContext'
 
 export default function Header() {
+  const { user, setUser } = useUser();
 
   const router = useRouter()
 
   const handleLogout = () => {
-    router.push('/')
+    setUser(null);
+    router.push('/');
   }
 
   return (
@@ -21,7 +24,11 @@ export default function Header() {
           Log Out
         </button>
         <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-          <User size={20} className="text-gray-600" />
+        {!user || !user.photoURL ? (
+            <User size={20} className="text-gray-600" />
+          ) : (
+            <img src={user.photoURL} alt="User profile" className="w-full h-full rounded-full" />
+          )}
         </div>
       </div>
     </header>
