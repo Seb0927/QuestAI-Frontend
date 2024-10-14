@@ -2,12 +2,22 @@
 
 import { Button } from "@/components/ui/button"
 import { useRouter } from 'next/navigation'
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth"
+import { auth } from "../firebase/firebaseConfig"
 
 export default function SignUp() {
   const router = useRouter()
 
-  const handleSignUp = () => {
-    router.push('/content')
+  const handleSignUp = async (e:any) => {
+    const provider = new GoogleAuthProvider();
+    try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        router.push('/content')
+        console.log(user);
+    } catch (error) {
+        console.error("Error al iniciar sesión con Google: ", error);
+    }
   }
 
   return (
