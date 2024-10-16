@@ -10,7 +10,7 @@ export default function SignUp() {
   const { user, setUser } = useUser();
   const router = useRouter()
 
-  const handleSignUp = async (e:any) => {
+  const handleSignUp = async () => {
     const provider = new GoogleAuthProvider();
     try {
         const result = await signInWithPopup(auth, provider);
@@ -23,6 +23,7 @@ export default function SignUp() {
         }
         setUser(loggedUser);
         router.push('/content')
+        console.log(user)
     } catch (error) {
         console.error("Error al iniciar sesión con Google: ", error);
     }
