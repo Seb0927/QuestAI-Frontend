@@ -320,7 +320,7 @@ export default function Content() {
           <Dialog>
             <DialogTrigger asChild>
               <Button className="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700" onClick={() => generateSummary(0)}>
-                Generate a summary
+                Genera un resumen
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -340,7 +340,7 @@ export default function Content() {
           <Dialog>
             <DialogTrigger asChild>
               <Button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300" onClick={() => generateSummary(1)}>
-                Generate a summary for every Interviewee
+                Genera un resumen por cada entrevistado
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -360,7 +360,7 @@ export default function Content() {
           <Dialog>
             <DialogTrigger asChild>
               <Button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300" onClick={() => generateSummary(2)}>
-                Who is the best
+                ¿Quién es el mejor?
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -377,23 +377,8 @@ export default function Content() {
               </DialogHeader>
             </DialogContent>
           </Dialog>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300">
-                Translate
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Hello</DialogTitle>
-                <DialogDescription>
-                  You are welcome
-                </DialogDescription>
-              </DialogHeader>
-            </DialogContent>
-          </Dialog>
           <Button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300" onClick={deleteAll}>
-            Delete all
+            Borrar todo
           </Button>
         </div>
       </div>
