@@ -13,6 +13,9 @@ import {
 } from '@/components/ui/dialog'
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
+import { useUser } from '@/context/UserContext'
+import { firestore } from "../firebase/firebaseConfig"
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 
 
 interface Interviewee {
@@ -23,6 +26,10 @@ interface Interviewee {
 }
 
 export default function Content() {
+  const { user } = useUser();
+  const fireStore = firestore;
+  const data = doc(fireStore, `users/${user?.uid}`);
+
   const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("NEXT_PUBLIC_GEMINI_API_KEY is not defined");
@@ -104,7 +111,7 @@ export default function Content() {
   const [questionID, setQuestionID] = useState<number>(0)
   const [intervieweeID, setIntervieweeID] = useState<number>(1)
   const [question, setQuestion] = useState<string>('')
-  const [interviewees] = useState<Interviewee[]>([])
+  const [interviewees, setInterviewee] = useState<Interviewee[]>([])
 
   const [recognizer, setRecognizer] = useState<SpeechSDK.SpeechRecognizer | null>(null);
 
@@ -124,6 +131,24 @@ export default function Content() {
 
     setRecognizer(newRecognizer);
 
+    const readDocument = async () => {
+      const mySnapshot = await getDoc(data);
+      if (mySnapshot.exists()) {
+        const info = mySnapshot.data();
+        const val = info.questionID == 0 ? 0 : info.questionID+1
+        console.log(val)
+        console.log(info.questionID)
+        if (info) {
+          setIntervieweeID(info.intervieweeID);
+          setQuestionID(val);
+          setQuestion(info.question);
+          setInterviewee(info.interviewees);
+        }
+      }
+    }
+
+    readDocument();
+
     return () => {
       newRecognizer.close();
     };
@@ -134,6 +159,22 @@ export default function Content() {
     setQuestionID(0)
     setIntervieweeID(1)
     setQuestionRecorded(false)
+
+    const saveDocument = async () => {
+      const docData = {
+        interviewees: [],
+        questionID: 0,
+        intervieweeID: 1,
+        question: '',
+      };
+      try {
+        await setDoc(data, docData, { merge: true });
+        console.log("Document written with ID: ", data.id);
+      } catch (e) {
+        console.error("Error adding document: ", e);
+      }
+    };
+    saveDocument();
   }
 
   const startRecognition = () => {
@@ -153,9 +194,25 @@ export default function Content() {
             setQuestion(result.text)
             interviewees.push({ id: questionID, name: `interviewee ${1}`, question: `${result.text}`, response: ""})
             setQuestionRecorded(true)
+            const saveDocument = async () => {
+              const docData = {
+                interviewees: interviewees,
+                questionID: questionID,
+                intervieweeID: intervieweeID,
+                question: question,
+              };
+              try {
+                await setDoc(data, docData, { merge: true });
+                console.log("Document written with ID: ", data.id);
+              } catch (e) {
+                console.error("Error adding document: ", e);
+              }
+            };
+            saveDocument();
           }
         if (activeButton === 'answer') {
           console.log(interviewees)
+          console.log(questionID)
           if (!questionRecorded){
             console.log("Entre a falso respuesta")
             interviewees.push({ id: questionID, name: `interviewee ${intervieweeID}`, question: `${question}`, response: ""})
@@ -164,6 +221,23 @@ export default function Content() {
           setQuestionID(questionID + 1)
           setIntervieweeID(intervieweeID + 1)
           setQuestionRecorded(false)
+
+          const saveDocument = async () => {
+            const docData = {
+              interviewees: interviewees,
+              questionID: questionID,
+              intervieweeID: intervieweeID,
+              question: question,
+            };
+            try {
+              await setDoc(data, docData, { merge: true });
+              console.log("Document written with ID: ", data.id);
+            } catch (e) {
+              console.error("Error adding document: ", e);
+            }
+          };
+          saveDocument();
+
         }
         } else {
           console.error("Speech recognition error:", result.errorDetails);

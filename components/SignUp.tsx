@@ -2,12 +2,30 @@
 
 import { Button } from "@/components/ui/button"
 import { useRouter } from 'next/navigation'
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth"
+import { auth } from "../firebase/firebaseConfig"
+import { useUser } from "@/context/UserContext"
 
 export default function SignUp() {
+  const { user, setUser } = useUser();
   const router = useRouter()
 
-  const handleSignUp = () => {
-    router.push('/content')
+  const handleSignUp = async (e:any) => {
+    const provider = new GoogleAuthProvider();
+    try {
+        const result = await signInWithPopup(auth, provider);
+        const userInfo = result.user;
+        const loggedUser = {
+            uid: userInfo.uid,
+            email: userInfo.email,
+            displayName: userInfo.displayName,
+            photoURL: userInfo.photoURL
+        }
+        setUser(loggedUser);
+        router.push('/content')
+    } catch (error) {
+        console.error("Error al iniciar sesión con Google: ", error);
+    }
   }
 
   return (
